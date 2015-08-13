@@ -4,6 +4,8 @@ PROGRAM boolean_functions;
 {$PACKENUM 1}
 {$M 16777216,33554432}
 
+
+
 (*
  * Copyright (c) 1988-2007 Antonio Costa.
  * All rights reserved.
@@ -20,6 +22,8 @@ PROGRAM boolean_functions;
  * IMPLIED WARRANTIES, INCLUDING, WITHOUT LIMITATION, THE IMPLIED
  * WARRANTIES OF MERCHANTIBILITY AND FITNESS FOR A PARTICULAR PURPOSE.
  *)
+
+
 (*
    BOOLEAN FUNCTIONS - QUINE McCLUSKEY MINIMIZATION
 
@@ -29,99 +33,99 @@ PROGRAM boolean_functions;
    Modified by: ANTONIO COSTA, PORTO, AUGUST 2007
 *)
 
-CONST
-  variable_max=64;
-  multiple_max=16;
+CONST 
+  variable_max = 64;
+  multiple_max = 16;
 
-  term_max=32767;
-  prime_max=32767;
-  cube_max=32767;
+  term_max = 32767;
+  prime_max = 32767;
+  cube_max = 32767;
 
-  count1_max=32767;
-  count2_max=32767;
+  count1_max = 32767;
+  count2_max = 32767;
 
-  product_max=32767;
+  product_max = 32767;
 
-  char_max=5;
+  char_max = 5;
 
-  space=' ';
-  tab=CHR(9);
-  marker='#';
+  space = ' ';
+  tab = CHR(9);
+  marker = '#';
 
-  assign_op='=';
-  invert_op='/';
-  or_op='+';
-  and_op='*';
+  assign_op = '=';
+  invert_op = '/';
+  or_op = '+';
+  and_op = '*';
 
-  high='H';
-  low='L';
-  zero='0';
-  one='1';
-  dont_care='X';
+  high = 'H';
+  low = 'L';
+  zero = '0';
+  one = '1';
+  dont_care = 'X';
 
-  common1_name='TERM_';
-  common2_name='PRIME_';
-  common2_len=LENGTH(common2_name);
+  common1_name = 'TERM_';
+  common2_name = 'PRIME_';
+  common2_len = LENGTH(common2_name);
 
-TYPE
-  signal=RECORD
-           state:BOOLEAN;
-           name:STRING[char_max]
-         END;
+TYPE 
+  signal = RECORD
+    state: BOOLEAN;
+    name: STRING[char_max]
+  END;
 
-  input_value=(sN,s0,s1,sX);
-  input_code=PACKED ARRAY[1..variable_max] OF input_value;
-  output_code=PACKED ARRAY[1..multiple_max] OF BOOLEAN;
-  pointer=0..prime_max;
-  pointer_table=PACKED ARRAY[1..product_max] OF pointer;
+  input_value = (sN,s0,s1,sX);
+  input_code = PACKED ARRAY[1..variable_max] OF input_value;
+  output_code = PACKED ARRAY[1..multiple_max] OF BOOLEAN;
+  pointer = 0..prime_max;
+  pointer_table = PACKED ARRAY[1..product_max] OF pointer;
 
 {$INCLUDE spmatbits1.inc}
 
-VAR
+VAR 
   (* global variables *)
-  termtable:PACKED ARRAY[1..term_max] OF QWORD;
-  inpsignal:ARRAY[1..variable_max] OF signal;
-  outsignal:ARRAY[1..multiple_max] OF signal;
-  outlevel:PACKED ARRAY[1..multiple_max] OF BOOLEAN;
-  termtotal:PACKED ARRAY[0..multiple_max] OF 0..term_max;
-  mterm:PACKED ARRAY[1..term_max] OF input_code;
-  check:PACKED ARRAY[1..term_max] OF output_code;
-  primeimp:PACKED ARRAY[0..prime_max] OF input_code;
-  outcode:PACKED ARRAY[0..prime_max] OF output_code;
-  essential:PACKED ARRAY[1..prime_max] OF BOOLEAN;
-  petrick:PACKED ARRAY[1..prime_max] OF pointer;
-  count:pointer_table;
-  i,j,k,l,m,n,o:LONGINT;
-  variable,multiple,term,prime,product:LONGINT;
-  flag1,flag2,table_flag,stats_flag:BOOLEAN;
-  equat_flag:LONGINT;
+  termtable: PACKED ARRAY[1..term_max] OF QWORD;
+  inpsignal: ARRAY[1..variable_max] OF signal;
+  outsignal: ARRAY[1..multiple_max] OF signal;
+  outlevel: PACKED ARRAY[1..multiple_max] OF BOOLEAN;
+  termtotal: PACKED ARRAY[0..multiple_max] OF 0..term_max;
+  mterm: PACKED ARRAY[1..term_max] OF input_code;
+  check: PACKED ARRAY[1..term_max] OF output_code;
+  primeimp: PACKED ARRAY[0..prime_max] OF input_code;
+  outcode: PACKED ARRAY[0..prime_max] OF output_code;
+  essential: PACKED ARRAY[1..prime_max] OF BOOLEAN;
+  petrick: PACKED ARRAY[1..prime_max] OF pointer;
+  count: pointer_table;
+  i,j,k,l,m,n,o: LONGINT;
+  variable,multiple,term,prime,product: LONGINT;
+  flag1,flag2,table_flag,stats_flag: BOOLEAN;
+  equat_flag: LONGINT;
 
   (* "generate_primes" variables *)
-  outcode1,outcode2:PACKED ARRAY[1..cube_max] OF output_code;
+  outcode1,outcode2: PACKED ARRAY[1..cube_max] OF output_code;
 
-  runtime_error_flag:BOOLEAN;
-  env1:jmp_buf;
+  runtime_error_flag: BOOLEAN;
+  env1: jmp_buf;
 
 PROCEDURE exit_proc;
 
 BEGIN
-IF runtime_error_flag THEN
-  BEGIN
-  WRITELN;
-  WRITELN('***** RUNTIME ERROR: too much data or out of memory');
-  WRITELN
-  END;
-ExitCode:=0;
-ErrorAddr:=NIL
+  IF runtime_error_flag THEN
+    BEGIN
+      WRITELN;
+      WRITELN('***** RUNTIME ERROR: too much data or out of memory');
+      WRITELN
+    END;
+  ExitCode := 0;
+  ErrorAddr := NIL
 END;
 
-FUNCTION max(A,B:LONGINT):LONGINT;
+FUNCTION max(A,B:LONGINT): LONGINT;
 
 BEGIN
-IF A>B THEN
-  max:=A
-ELSE
-  max:=B
+  IF A>B THEN
+    max := A
+  ELSE
+    max := B
 END;
 
 {$INCLUDE spmatbits2.inc}
@@ -129,1652 +133,1651 @@ END;
 PROCEDURE runtime_abort(error:LONGINT);
 
 BEGIN
-WRITELN;
-WRITE('***** RUNTIME ERROR: ');
-CASE error OF
-  1:
-    WRITELN('too many sub-cubes');
-  2:
-    WRITELN('too many prime imps');
-  3:
-    WRITELN('too many petrick products')
+  WRITELN;
+  WRITE('***** RUNTIME ERROR: ');
+  CASE error OF 
+    1:
+       WRITELN('too many sub-cubes');
+    2:
+       WRITELN('too many prime imps');
+    3:
+       WRITELN('too many petrick products')
   END;
-WRITELN;
-LONGJMP(env1,1)
+  WRITELN;
+  LONGJMP(env1,1)
 END;
 
 PROCEDURE input_data;
 
-VAR
-  inpterm,temp:BitsMatrix;
-  code01,codeX:BitsMatrix;
-  ones:BitsMatrix; (* vector, dim 8 *)
-  group:PACKED ARRAY[0..variable_max] OF 0..count1_max;
-  lin,col:LONGINT;
-  c:CHAR;
-  termtable_dim:LONGWORD;
-  tv:QWORD;
+VAR 
+  inpterm,temp: BitsMatrix;
+  code01,codeX: BitsMatrix;
+  ones: BitsMatrix; (* vector, dim 8 *)
+  group: PACKED ARRAY[0..variable_max] OF 0..count1_max;
+  lin,col: LONGINT;
+  c: CHAR;
+  termtable_dim: LONGWORD;
+  tv: QWORD;
 
 PROCEDURE input_abort(error:SHORTINT);
 
 BEGIN
-WRITE('***** INPUT ERROR: ');
-CASE error OF
-  0:
-    WRITE('unable to read input');
-  1:
-    WRITE('no block marker [',marker,'] found');
-  2:
-    WRITE('illegal input variable');
-  3:
-    WRITE('too many input variables');
-  4:
-    WRITE('illegal output variable');
-  5:
-    WRITE('too many output variables');
-  6:
-    WRITE('wrong mode option');
-  7:
-    WRITE('wrong table option');
-  8:
-    WRITE('wrong equations option');
-  9:
-    WRITE('wrong statistics option');
-  10:
-    WRITE('illegal input term definition');
-  11:
-    WRITE('illegal output term definition');
-  12:
-    WRITE('too many input terms')
+  WRITE('***** INPUT ERROR: ');
+  CASE error OF 
+    0:
+       WRITE('unable to read input');
+    1:
+       WRITE('no block marker [',marker,'] found');
+    2:
+       WRITE('illegal input variable');
+    3:
+       WRITE('too many input variables');
+    4:
+       WRITE('illegal output variable');
+    5:
+       WRITE('too many output variables');
+    6:
+       WRITE('wrong mode option');
+    7:
+       WRITE('wrong table option');
+    8:
+       WRITE('wrong equations option');
+    9:
+       WRITE('wrong statistics option');
+    10:
+        WRITE('illegal input term definition');
+    11:
+        WRITE('illegal output term definition');
+    12:
+        WRITE('too many input terms')
   END;
-IF error>0 THEN
-  WRITE(' (line ',lin:0,', column ',col:0,')');
-WRITELN;
-LONGJMP(env1,1)
+  IF error>0 THEN
+    WRITE(' (line ',lin:0,', column ',col:0,')');
+  WRITELN;
+  LONGJMP(env1,1)
 END;
 
 PROCEDURE read_ch(VAR ch:CHAR;error:SHORTINT);
 
 BEGIN
-IF EOF OR EOLN THEN
-  input_abort(error);
-READ(ch);
-col:=SUCC(col)
+  IF EOF OR EOLN THEN
+    input_abort(error);
+  READ(ch);
+  col := SUCC(col)
 END;
 
 PROCEDURE read_ln(error:SHORTINT);
 
 BEGIN
-IF EOF THEN
-  input_abort(error);
-READLN;
-col:=0;
-lin:=SUCC(lin)
+  IF EOF THEN
+    input_abort(error);
+  READLN;
+  col := 0;
+  lin := SUCC(lin)
 END;
 
-FUNCTION uppercase(ch:CHAR):CHAR;
+FUNCTION uppercase(ch:CHAR): CHAR;
 
 BEGIN
-IF ch IN ['a'..'z'] THEN
-  uppercase:=CHR(ORD('A')+ORD(ch)-ORD('a'))
-ELSE
-  uppercase:=ch
+  IF ch IN ['a'..'z'] THEN
+    uppercase := CHR(ORD('A')+ORD(ch)-ORD('a'))
+  ELSE
+    uppercase := ch
 END;
 
 PROCEDURE skip_comments(flag:BOOLEAN;error:SHORTINT);
 
 BEGIN
-IF flag THEN
-  read_ln(error);
-REPEAT
-  WHILE EOLN DO
+  IF flag THEN
     read_ln(error);
-  read_ch(c,error);
-  read_ln(error)
-UNTIL c=marker
+  REPEAT
+    WHILE EOLN DO
+      read_ln(error);
+    read_ch(c,error);
+    read_ln(error)
+  UNTIL c=marker
 END;
 
 PROCEDURE get_signal(VAR s:signal;error:SHORTINT);
 
 BEGIN
-WITH s DO
-  BEGIN
-  name:='';
-  WHILE c IN [space,tab] DO
-    read_ch(c,error);
-  WHILE NOT (c IN [space,tab]) OR (name='') DO
+  WITH s DO
     BEGIN
-    IF LENGTH(name)<char_max THEN
-    IF uppercase(c) IN ['A'..'Z','0'..'9'] THEN
-       name:=name+c;
-    read_ch(c,error)
+      name := '';
+      WHILE c IN [space,tab] DO
+        read_ch(c,error);
+      WHILE NOT (c IN [space,tab]) OR (name='') DO
+        BEGIN
+          IF LENGTH(name)<char_max THEN
+            IF uppercase(c) IN ['A'..'Z','0'..'9'] THEN
+              name := name+c;
+          read_ch(c,error)
+        END;
+      REPEAT
+        read_ch(c,error);
+        c := uppercase(c)
+      UNTIL c IN [low,high];
+      state := c=high
+    END
+END;
+
+FUNCTION term_value: QWORD;
+
+VAR 
+  value,weight: QWORD;
+  z: LONGINT;
+
+BEGIN
+  value := 1;
+  weight := 1;
+  FOR z:=1 TO variable DO
+    BEGIN
+      IF GetBM(@temp,j,z)=WORD(s1) THEN
+        value := value+weight;
+      weight := 2*weight
     END;
+  term_value := value
+END;
+
+FUNCTION valid_output(n:QWORD): BOOLEAN;
+
+VAR 
+  flag: BOOLEAN;
+  z: LONGINT;
+
+BEGIN
+  z := 0;
   REPEAT
-    read_ch(c,error);
-    c:=uppercase(c)
-  UNTIL c IN [low,high];
-  state:=c=high
-  END
-END;
-
-FUNCTION term_value:QWORD;
-
-VAR
-  value,weight:QWORD;
-  z:LONGINT;
-
-BEGIN
-value:=1;
-weight:=1;
-FOR z:=1 TO variable DO
-  BEGIN
-  IF GetBM(@temp,j,z)=WORD(s1) THEN
-    value:=value+weight;
-  weight:=2*weight
-  END;
-term_value:=value
-END;
-
-FUNCTION valid_output(n:QWORD):BOOLEAN;
-
-VAR
-  flag:BOOLEAN;
-  z:LONGINT;
-
-BEGIN
-z:=0;
-REPEAT
-  z:=SUCC(z);
-  flag:=BOOLEAN(GetBM(@code01,n,z))
-UNTIL (z=multiple) OR flag;
-valid_output:=flag
+    z := SUCC(z);
+    flag := BOOLEAN(GetBM(@code01,n,z))
+  UNTIL (z=multiple) OR flag;
+  valid_output := flag
 END;
 
 PROCEDURE init_termtable;
 
 BEGIN
-termtable_dim:=0
+  termtable_dim := 0
 END;
 
 PROCEDURE set_termtable(n:QWORD;value:BOOLEAN);
 
-VAR
-  ok:BOOLEAN;
-  i:LONGWORD;
+VAR 
+  ok: BOOLEAN;
+  i: LONGWORD;
 
 BEGIN
-ok:=TRUE;
-i:=1;
-WHILE (i<=termtable_dim) AND ok DO
-  BEGIN
-  IF termtable[i]<>n THEN
-    i:=SUCC(i)
-  ELSE
+  ok := TRUE;
+  i := 1;
+  WHILE (i<=termtable_dim) AND ok DO
     BEGIN
-    IF NOT value THEN
-      BEGIN
-      IF i<>termtable_dim THEN
-        termtable[i]:=termtable[termtable_dim];
-      termtable_dim:=PRED(termtable_dim)
-      END;
-    ok:=FALSE
+      IF termtable[i]<>n THEN
+        i := SUCC(i)
+      ELSE
+        BEGIN
+          IF NOT value THEN
+            BEGIN
+              IF i<>termtable_dim THEN
+                termtable[i] := termtable[termtable_dim];
+              termtable_dim := PRED(termtable_dim)
+            END;
+          ok := FALSE
+        END
+    END;
+  IF ok AND value THEN
+    BEGIN
+      termtable_dim := SUCC(termtable_dim);
+      IF termtable_dim>term_max THEN
+        input_abort(12);
+      termtable[termtable_dim] := n
     END
-  END;
-IF ok AND value THEN
-  BEGIN
-  termtable_dim:=SUCC(termtable_dim);
-  IF termtable_dim>term_max THEN
-    input_abort(12);
-  termtable[termtable_dim]:=n
-  END
 END;
 
-FUNCTION check_termtable(n:QWORD):BOOLEAN;
+FUNCTION check_termtable(n:QWORD): BOOLEAN;
 
-VAR
-  ok:BOOLEAN;
-  i:LONGWORD;
+VAR 
+  ok: BOOLEAN;
+  i: LONGWORD;
 
 BEGIN
-check_termtable:=FALSE;
-ok:=TRUE;
-i:=1;
-WHILE (i<=termtable_dim) AND ok DO
-  BEGIN
-  IF termtable[i]<>n THEN
-    i:=SUCC(i)
-  ELSE
+  check_termtable := FALSE;
+  ok := TRUE;
+  i := 1;
+  WHILE (i<=termtable_dim) AND ok DO
     BEGIN
-    check_termtable:=TRUE;
-    ok:=FALSE
+      IF termtable[i]<>n THEN
+        i := SUCC(i)
+      ELSE
+        BEGIN
+          check_termtable := TRUE;
+          ok := FALSE
+        END
     END
-  END
 END;
 
 BEGIN
-InitBM(@inpterm,2);
-InitBM(@temp,2);
-InitBM(@code01,1);
-InitBM(@codeX,1);
-InitBM(@ones,8);
-lin:=1;
-col:=0;
-skip_comments(FALSE,1);
-variable:=0;
-read_ch(c,2);
-REPEAT
-  variable:=SUCC(variable);
-  IF variable>variable_max THEN
-    input_abort(3);
-  get_signal(inpsignal[variable],2);
-  read_ln(1);
-  read_ch(c,1)
-UNTIL c=marker;
-read_ln(4);
-multiple:=0;
-read_ch(c,4);
-REPEAT
-  multiple:=SUCC(multiple);
-  IF multiple>multiple_max THEN
-    input_abort(5);
-  get_signal(outsignal[multiple],4);
+  InitBM(@inpterm,2);
+  InitBM(@temp,2);
+  InitBM(@code01,1);
+  InitBM(@codeX,1);
+  InitBM(@ones,8);
+  lin := 1;
+  col := 0;
+  skip_comments(FALSE,1);
+  variable := 0;
+  read_ch(c,2);
   REPEAT
-    read_ch(c,4)
+    variable := SUCC(variable);
+    IF variable>variable_max THEN
+      input_abort(3);
+    get_signal(inpsignal[variable],2);
+    read_ln(1);
+    read_ch(c,1)
+  UNTIL c=marker;
+  read_ln(4);
+  multiple := 0;
+  read_ch(c,4);
+  REPEAT
+    multiple := SUCC(multiple);
+    IF multiple>multiple_max THEN
+      input_abort(5);
+    get_signal(outsignal[multiple],4);
+    REPEAT
+      read_ch(c,4)
+    UNTIL c IN [zero,one];
+    outlevel[multiple] := c=one;
+    read_ln(1);
+    read_ch(c,1)
+  UNTIL c=marker;
+  read_ln(6);
+  REPEAT
+    read_ch(c,6)
+  UNTIL c IN [zero..'6'];
+  flag1 := c<>zero;
+  o := ORD(c)-ORD(zero);
+  read_ln(7);
+  REPEAT
+    read_ch(c,7)
   UNTIL c IN [zero,one];
-  outlevel[multiple]:=c=one;
-  read_ln(1);
-  read_ch(c,1)
-UNTIL c=marker;
-read_ln(6);
-REPEAT
-  read_ch(c,6)
-UNTIL c IN [zero..'6'];
-flag1:=c<>zero;
-o:=ORD(c)-ORD(zero);
-read_ln(7);
-REPEAT
-  read_ch(c,7)
-UNTIL c IN [zero,one];
-table_flag:=c=one;
-read_ln(8);
-REPEAT
-  read_ch(c,8)
-UNTIL c IN [zero..'4'];
-equat_flag:=ORD(c)-ORD(zero);
-read_ln(9);
-REPEAT
-  read_ch(c,9)
-UNTIL c IN [zero,one];
-stats_flag:=c=one;
-skip_comments(TRUE,1);
-init_termtable;
-FOR i:=0 TO variable DO
-  group[i]:=0;
-WHILE NOT EOF DO
-  BEGIN
-  n:=0;
-  FOR j:=1 TO variable DO
+  table_flag := c=one;
+  read_ln(8);
+  REPEAT
+    read_ch(c,8)
+  UNTIL c IN [zero..'4'];
+  equat_flag := ORD(c)-ORD(zero);
+  read_ln(9);
+  REPEAT
+    read_ch(c,9)
+  UNTIL c IN [zero,one];
+  stats_flag := c=one;
+  skip_comments(TRUE,1);
+  init_termtable;
+  FOR i:=0 TO variable DO
+    group[i] := 0;
+  WHILE NOT EOF DO
     BEGIN
-    REPEAT
-      read_ch(c,10);
-      c:=uppercase(c)
-    UNTIL c IN [zero,one,dont_care];
-    CASE c OF
-      zero:
-        SetBM(@temp,1,j,WORD(s0));
-      one:
-        SetBM(@temp,1,j,WORD(s1));
-      dont_care:
+      n := 0;
+      FOR j:=1 TO variable DO
         BEGIN
-        SetBM(@temp,1,j,WORD(sX));
-        n:=SUCC(n)
+          REPEAT
+            read_ch(c,10);
+            c := uppercase(c)
+          UNTIL c IN [zero,one,dont_care];
+          CASE c OF 
+            zero:
+                  SetBM(@temp,1,j,WORD(s0));
+            one:
+                 SetBM(@temp,1,j,WORD(s1));
+            dont_care:
+                       BEGIN
+                         SetBM(@temp,1,j,WORD(sX));
+                         n := SUCC(n)
+                       END
+          END
+        END;
+      FOR j:=1 TO multiple DO
+        BEGIN
+          REPEAT
+            read_ch(c,11);
+            c := uppercase(c)
+          UNTIL c IN [zero,one,dont_care];
+          IF outlevel[j] THEN
+            SetBM(@code01,0,j,WORD(c<>zero))
+          ELSE
+            SetBM(@code01,0,j,WORD(c<>one));
+          SetBM(@codeX,0,j,WORD(c<>dont_care))
+        END;
+      i := 1;
+      FOR j:=1 TO n DO
+        BEGIN
+          k := i;
+          FOR l:=1 TO k DO
+            BEGIN
+              m := 1;
+              WHILE GetBM(@temp,l,m)<>WORD(sX) DO
+                m := SUCC(m);
+              i := SUCC(i);
+              SetBM(@temp,l,m,WORD(s0));
+              CRowBM(@temp,i,@temp,l);
+              SetBM(@temp,i,m,WORD(s1))
+            END
+        END;
+      FOR j:=1 TO i DO
+        BEGIN
+          tv := term_value;
+          IF flag1 AND check_termtable(tv) THEN
+            FOR l:=1 TO multiple DO
+              CASE o OF 
+                1:
+                   BEGIN
+                     SetBM(@code01,tv,l,GetBM(@code01,tv,l) AND GetBM(@code01,0,l));
+                     SetBM(@codeX,tv,l,GetBM(@codeX,tv,l) AND GetBM(@codeX,0,l)
+                     OR NOTWORD(GetBM(@code01,tv,l)) OR NOTWORD(GetBM(@code01,0,l)))
+                   END;
+                2:
+                   BEGIN
+                     SetBM(@code01,tv,l,GetBM(@code01,tv,l) AND GetBM(@code01,0,l));
+                     SetBM(@codeX,tv,l,GetBM(@codeX,tv,l) OR GetBM(@codeX,0,l))
+                   END;
+                3:
+                   BEGIN
+                     SetBM(@code01,tv,l,GetBM(@code01,tv,l) AND GetBM(@code01,0,l)
+                     OR NOTWORD(GetBM(@codeX,tv,l)) OR NOTWORD(GetBM(@codeX,0,l)));
+                     SetBM(@codeX,tv,l,GetBM(@codeX,tv,l) AND GetBM(@codeX,0,l))
+                   END;
+                4:
+                   BEGIN
+                     SetBM(@code01,tv,l,GetBM(@code01,tv,l) OR GetBM(@code01,0,l));
+                     SetBM(@codeX,tv,l,GetBM(@codeX,tv,l) AND GetBM(@codeX,0,l))
+                   END;
+                5:
+                   BEGIN
+                     SetBM(@code01,tv,l,GetBM(@code01,tv,l) AND GetBM(@code01,0,l)
+                     OR GetBM(@code01,tv,l) AND GetBM(@codeX,tv,l)
+                     OR GetBM(@code01,0,l) AND GetBM(@codeX,0,l));
+                     SetBM(@codeX,tv,l,GetBM(@codeX,tv,l) OR GetBM(@codeX,0,l))
+                   END;
+                6:
+                   BEGIN
+                     SetBM(@code01,tv,l,GetBM(@code01,tv,l) OR GetBM(@code01,0,l));
+                     SetBM(@codeX,tv,l,GetBM(@codeX,tv,l) AND GetBM(@codeX,0,l)
+                     OR GetBM(@code01,tv,l) AND GetBM(@codeX,tv,l)
+                     OR GetBM(@code01,0,l) AND GetBM(@codeX,0,l))
+                   END
+              END
+              ELSE
+                BEGIN
+                  IF NOT check_termtable(tv) THEN
+                    BEGIN
+                      set_termtable(tv,TRUE);
+                      CRowBM(@inpterm,tv,@temp,j);
+                      l := 0;
+                      FOR m:=1 TO variable DO
+                        IF GetBM(@inpterm,tv,m)=WORD(s1) THEN
+                          l := SUCC(l);
+                      SetBM(@ones,0,tv,l);
+                      group[l] := SUCC(group[l])
+                    END;
+                  CRowBM(@code01,tv,@code01,0);
+                  CRowBM(@codeX,tv,@codeX,0)
+                END
+        END;
+      read_ln(11)
+    END;
+  IF stats_flag THEN
+    FOR i:=1 TO multiple DO
+      termtotal[i] := 0;
+  term := 0;
+  FOR i:=0 TO variable DO
+    BEGIN
+      j := 1;
+      WHILE (group[i]>0) AND (j<=termtable_dim) DO
+        BEGIN
+          tv := termtable[j];
+          IF GetBM(@ones,0,tv)=i THEN
+            BEGIN
+              IF valid_output(tv) THEN
+                BEGIN
+                  term := SUCC(term);
+                  FOR k:=1 TO variable DO
+                    BEGIN
+                      mterm[term,k] := INPUT_VALUE(GetBM(@inpterm,tv,k));
+                      outcode[term,k] := BOOLEAN(GetBM(@code01,tv,k))
+                    END;
+                  IF stats_flag THEN
+                    FOR k:=1 TO multiple DO
+                      IF outcode[term,k] THEN
+                        termtotal[k] := SUCC(termtotal[k]);
+                  FOR k:=1 TO variable DO
+                    check[term,k] := BOOLEAN(GetBM(@codeX,tv,k))
+                END;
+              group[i] := PRED(group[i]);
+              set_termtable(tv,FALSE)
+            END
+          ELSE
+            j := SUCC(j)
         END
-      END
     END;
-  FOR j:=1 TO multiple DO
-    BEGIN
-    REPEAT
-      read_ch(c,11);
-      c:=uppercase(c)
-    UNTIL c IN [zero,one,dont_care];
-    IF outlevel[j] THEN
-      SetBM(@code01,0,j,WORD(c<>zero))
-    ELSE
-      SetBM(@code01,0,j,WORD(c<>one));
-    SetBM(@codeX,0,j,WORD(c<>dont_care))
-    END;
-  i:=1;
-  FOR j:=1 TO n DO
-    BEGIN
-    k:=i;
-    FOR l:=1 TO k DO
-      BEGIN
-      m:=1;
-      WHILE GetBM(@temp,l,m)<>WORD(sX) DO
-        m:=SUCC(m);
-      i:=SUCC(i);
-      SetBM(@temp,l,m,WORD(s0));
-      CRowBM(@temp,i,@temp,l);
-      SetBM(@temp,i,m,WORD(s1))
-      END
-    END;
-  FOR j:=1 TO i DO
-    BEGIN
-    tv:=term_value;
-    IF flag1 AND check_termtable(tv) THEN
-    FOR l:=1 TO multiple DO
-    CASE o OF
-      1:
-        BEGIN
-        SetBM(@code01,tv,l,GetBM(@code01,tv,l) AND GetBM(@code01,0,l));
-        SetBM(@codeX,tv,l,GetBM(@codeX,tv,l) AND GetBM(@codeX,0,l)
-          OR NOTWORD(GetBM(@code01,tv,l)) OR NOTWORD(GetBM(@code01,0,l)))
-        END;
-      2:
-        BEGIN
-        SetBM(@code01,tv,l,GetBM(@code01,tv,l) AND GetBM(@code01,0,l));
-        SetBM(@codeX,tv,l,GetBM(@codeX,tv,l) OR GetBM(@codeX,0,l))
-        END;
-      3:
-        BEGIN
-        SetBM(@code01,tv,l,GetBM(@code01,tv,l) AND GetBM(@code01,0,l)
-          OR NOTWORD(GetBM(@codeX,tv,l)) OR NOTWORD(GetBM(@codeX,0,l)));
-        SetBM(@codeX,tv,l,GetBM(@codeX,tv,l) AND GetBM(@codeX,0,l))
-        END;
-      4:
-        BEGIN
-        SetBM(@code01,tv,l,GetBM(@code01,tv,l) OR GetBM(@code01,0,l));
-        SetBM(@codeX,tv,l,GetBM(@codeX,tv,l) AND GetBM(@codeX,0,l))
-        END;
-      5:
-        BEGIN
-        SetBM(@code01,tv,l,GetBM(@code01,tv,l) AND GetBM(@code01,0,l)
-          OR GetBM(@code01,tv,l) AND GetBM(@codeX,tv,l)
-          OR GetBM(@code01,0,l) AND GetBM(@codeX,0,l));
-        SetBM(@codeX,tv,l,GetBM(@codeX,tv,l) OR GetBM(@codeX,0,l))
-        END;
-      6:
-        BEGIN
-        SetBM(@code01,tv,l,GetBM(@code01,tv,l) OR GetBM(@code01,0,l));
-        SetBM(@codeX,tv,l,GetBM(@codeX,tv,l) AND GetBM(@codeX,0,l)
-          OR GetBM(@code01,tv,l) AND GetBM(@codeX,tv,l)
-          OR GetBM(@code01,0,l) AND GetBM(@codeX,0,l))
-        END
-      END
-    ELSE
-      BEGIN
-      IF NOT check_termtable(tv) THEN
-        BEGIN
-        set_termtable(tv,TRUE);
-        CRowBM(@inpterm,tv,@temp,j);
-        l:=0;
-        FOR m:=1 TO variable DO
-        IF GetBM(@inpterm,tv,m)=WORD(s1) THEN
-          l:=SUCC(l);
-        SetBM(@ones,0,tv,l);
-        group[l]:=SUCC(group[l])
-        END;
-      CRowBM(@code01,tv,@code01,0);
-      CRowBM(@codeX,tv,@codeX,0)
-      END
-    END;
-  read_ln(11)
-  END;
-IF stats_flag THEN
-FOR i:=1 TO multiple DO
-  termtotal[i]:=0;
-term:=0;
-FOR i:=0 TO variable DO
-  BEGIN
-  j:=1;
-  WHILE (group[i]>0) AND (j<=termtable_dim) DO
-    BEGIN
-    tv:=termtable[j];
-    IF GetBM(@ones,0,tv)=i THEN
-      BEGIN
-      IF valid_output(tv) THEN
-        BEGIN
-        term:=SUCC(term);
-        FOR k:=1 to variable DO
-          BEGIN
-          mterm[term,k]:=INPUT_VALUE(GetBM(@inpterm,tv,k));
-          outcode[term,k]:=BOOLEAN(GetBM(@code01,tv,k))
-          END;
-        IF stats_flag THEN
-        FOR k:=1 TO multiple DO
-        IF outcode[term,k] THEN
-          termtotal[k]:=SUCC(termtotal[k]);
-        FOR k:=1 to variable DO
-          check[term,k]:=BOOLEAN(GetBM(@codeX,tv,k))
-        END;
-      group[i]:=PRED(group[i]);
-      set_termtable(tv,FALSE)
-      END
-    ELSE
-      j:=SUCC(j)
-    END
-  END;
-CleanBM(@inpterm);
-CleanBM(@temp);
-CleanBM(@code01);
-CleanBM(@codeX);
-CleanBM(@ones)
+  CleanBM(@inpterm);
+  CleanBM(@temp);
+  CleanBM(@code01);
+  CleanBM(@codeX);
+  CleanBM(@ones)
 END;
 
 PROCEDURE generate_primes;
 
-VAR
-  term1,term2:PACKED ARRAY[1..cube_max] OF input_code;
-  ones1,ones2:PACKED ARRAY[0..cube_max] OF 0..variable_max;
-  group1,group2:PACKED ARRAY[0..variable_max] OF 0..count2_max;
-  primeflag1,primeflag2:PACKED ARRAY[1..cube_max] OF BOOLEAN;
+VAR 
+  term1,term2: PACKED ARRAY[1..cube_max] OF input_code;
+  ones1,ones2: PACKED ARRAY[0..cube_max] OF 0..variable_max;
+  group1,group2: PACKED ARRAY[0..variable_max] OF 0..count2_max;
+  primeflag1,primeflag2: PACKED ARRAY[1..cube_max] OF BOOLEAN;
 
-FUNCTION terms_combine:BOOLEAN;
+FUNCTION terms_combine: BOOLEAN;
 
-VAR
-  diff,z:LONGINT;
-
-BEGIN
-diff:=0;
-z:=0;
-REPEAT
-  z:=SUCC(z);
-  IF term1[l,z]<>term1[m,z] THEN
-    diff:=SUCC(diff)
-UNTIL (z=variable) OR (diff>1);
-terms_combine:=diff=1
-END;
-
-FUNCTION groups_combine:BOOLEAN;
-
-VAR
-  flag:BOOLEAN;
-  z:LONGINT;
+VAR 
+  diff,z: LONGINT;
 
 BEGIN
-z:=0;
-REPEAT
-  z:=SUCC(z);
-  flag:=(group1[PRED(z)]>0) AND (group1[z]>0)
-UNTIL (z=variable) OR flag;
-groups_combine:=flag
-END;
-
-FUNCTION common_output:BOOLEAN;
-
-VAR
-  flag:BOOLEAN;
-  z:LONGINT;
-
-BEGIN
-z:=0;
-REPEAT
-  z:=SUCC(z);
-  flag:=outcode1[l,z] AND outcode1[m,z]
-UNTIL (z=multiple) OR flag;
-common_output:=flag
-END;
-
-FUNCTION different_output(x:output_code):BOOLEAN;
-
-VAR
-  flag:BOOLEAN;
-  z:LONGINT;
-
-BEGIN
-z:=0;
-REPEAT
-  z:=SUCC(z);
-  flag:=outcode2[j,z]<>x[z]
-UNTIL (z=multiple) OR flag;
-different_output:=flag
-END;
-
-FUNCTION found_before:BOOLEAN;
-
-VAR
-  flag:BOOLEAN;
-  z:LONGINT;
-
-FUNCTION equal_input:BOOLEAN;
-
-VAR
-  flag:BOOLEAN;
-  w:LONGINT;
-
-BEGIN
-w:=0;
-REPEAT
-  w:=SUCC(w);
-  flag:=term2[j,w]<>term2[z,w]
-UNTIL (w=variable) OR flag;
-equal_input:=NOT flag
-END;
-
-BEGIN
-IF j=1 THEN
-  found_before:=FALSE
-ELSE
-  BEGIN
-  z:=0;
+  diff := 0;
+  z := 0;
   REPEAT
-    z:=SUCC(z);
-    flag:=equal_input
-  UNTIL (z=PRED(j)) OR flag;
-  found_before:=flag
-  END
+    z := SUCC(z);
+    IF term1[l,z]<>term1[m,z] THEN
+      diff := SUCC(diff)
+  UNTIL (z=variable) OR (diff>1);
+  terms_combine := diff=1
+END;
+
+FUNCTION groups_combine: BOOLEAN;
+
+VAR 
+  flag: BOOLEAN;
+  z: LONGINT;
+
+BEGIN
+  z := 0;
+  REPEAT
+    z := SUCC(z);
+    flag := (group1[PRED(z)]>0) AND (group1[z]>0)
+  UNTIL (z=variable) OR flag;
+  groups_combine := flag
+END;
+
+FUNCTION common_output: BOOLEAN;
+
+VAR 
+  flag: BOOLEAN;
+  z: LONGINT;
+
+BEGIN
+  z := 0;
+  REPEAT
+    z := SUCC(z);
+    flag := outcode1[l,z] AND outcode1[m,z]
+  UNTIL (z=multiple) OR flag;
+  common_output := flag
+END;
+
+FUNCTION different_output(x:output_code): BOOLEAN;
+
+VAR 
+  flag: BOOLEAN;
+  z: LONGINT;
+
+BEGIN
+  z := 0;
+  REPEAT
+    z := SUCC(z);
+    flag := outcode2[j,z]<>x[z]
+  UNTIL (z=multiple) OR flag;
+  different_output := flag
+END;
+
+FUNCTION found_before: BOOLEAN;
+
+VAR 
+  flag: BOOLEAN;
+  z: LONGINT;
+
+FUNCTION equal_input: BOOLEAN;
+
+VAR 
+  flag: BOOLEAN;
+  w: LONGINT;
+
+BEGIN
+  w := 0;
+  REPEAT
+    w := SUCC(w);
+    flag := term2[j,w]<>term2[z,w]
+  UNTIL (w=variable) OR flag;
+  equal_input := NOT flag
 END;
 
 BEGIN
-FOR i:=0 TO variable DO
-  group1[i]:=0;
-FOR i:=1 TO term DO
-  BEGIN
-  term1[i]:=mterm[i];
-  o:=0;
-  FOR j:=1 TO variable DO
-  IF term1[i,j]=s1 THEN
-    o:=SUCC(o);
-  ones1[i]:=o;
-  group1[o]:=SUCC(group1[o]);
-  outcode1[i]:=outcode[i];
-  primeflag1[i]:=TRUE;
-  FOR j:=1 TO multiple DO
-    check[i,j]:=check[i,j] AND outcode[i,j]
-  END;
-ones1[0]:=0;
-ones2[0]:=0;
-i:=term;
-prime:=0;
-flag1:=groups_combine;
-WHILE flag1 DO
-  BEGIN
-  FOR l:=0 TO variable DO
-    group2[l]:=0;
-  j:=0;
-  k:=1;
-  FOR l:=1 TO i-group1[ones1[i]] DO
+  IF j=1 THEN
+    found_before := FALSE
+  ELSE
     BEGIN
-    IF (ones1[l]>ones1[PRED(l)]) OR (l=1) THEN
-      BEGIN
-      k:=k+group1[ones1[l]];
-      o:=PRED(k)+group1[SUCC(ones1[l])]
-      END;
-    FOR m:=k TO o DO
-    IF common_output THEN
-    IF terms_combine THEN
-      BEGIN
-      j:=SUCC(j);
-      IF j>cube_max THEN
-        runtime_abort(1);
-      term2[j]:=term1[l];
-      n:=1;
-      WHILE term1[l,n]=term1[m,n] DO
-        n:=SUCC(n);
-      term2[j,n]:=sX;
-      outcode2[j]:=outcode1[l];
-      FOR n:=1 TO multiple DO
-        outcode2[j,n]:=outcode2[j,n] AND outcode1[m,n];
-      primeflag1[l]:=primeflag1[l] AND different_output(outcode1[l]);
-      primeflag1[m]:=primeflag1[m] AND different_output(outcode1[m]);
-      IF found_before THEN
-        j:=PRED(j)
-      ELSE
+      z := 0;
+      REPEAT
+        z := SUCC(z);
+        flag := equal_input
+      UNTIL (z=PRED(j)) OR flag;
+      found_before := flag
+    END
+END;
+
+BEGIN
+  FOR i:=0 TO variable DO
+    group1[i] := 0;
+  FOR i:=1 TO term DO
+    BEGIN
+      term1[i] := mterm[i];
+      o := 0;
+      FOR j:=1 TO variable DO
+        IF term1[i,j]=s1 THEN
+          o := SUCC(o);
+      ones1[i] := o;
+      group1[o] := SUCC(group1[o]);
+      outcode1[i] := outcode[i];
+      primeflag1[i] := TRUE;
+      FOR j:=1 TO multiple DO
+        check[i,j] := check[i,j] AND outcode[i,j]
+    END;
+  ones1[0] := 0;
+  ones2[0] := 0;
+  i := term;
+  prime := 0;
+  flag1 := groups_combine;
+  WHILE flag1 DO
+    BEGIN
+      FOR l:=0 TO variable DO
+        group2[l] := 0;
+      j := 0;
+      k := 1;
+      FOR l:=1 TO i-group1[ones1[i]] DO
         BEGIN
-        ones2[j]:=ones1[l];
-        group2[ones2[j]]:=SUCC(group2[ones2[j]]);
-        primeflag2[j]:=TRUE
+          IF (ones1[l]>ones1[PRED(l)]) OR (l=1) THEN
+            BEGIN
+              k := k+group1[ones1[l]];
+              o := PRED(k)+group1[SUCC(ones1[l])]
+            END;
+          FOR m:=k TO o DO
+            IF common_output THEN
+              IF terms_combine THEN
+                BEGIN
+                  j := SUCC(j);
+                  IF j>cube_max THEN
+                    runtime_abort(1);
+                  term2[j] := term1[l];
+                  n := 1;
+                  WHILE term1[l,n]=term1[m,n] DO
+                    n := SUCC(n);
+                  term2[j,n] := sX;
+                  outcode2[j] := outcode1[l];
+                  FOR n:=1 TO multiple DO
+                    outcode2[j,n] := outcode2[j,n] AND outcode1[m,n];
+                  primeflag1[l] := primeflag1[l] AND different_output(outcode1[l]);
+                  primeflag1[m] := primeflag1[m] AND different_output(outcode1[m]);
+                  IF found_before THEN
+                    j := PRED(j)
+                  ELSE
+                    BEGIN
+                      ones2[j] := ones1[l];
+                      group2[ones2[j]] := SUCC(group2[ones2[j]]);
+                      primeflag2[j] := TRUE
+                    END
+                END;
+          IF primeflag1[l] THEN
+            BEGIN
+              prime := SUCC(prime);
+              IF prime>prime_max THEN
+                runtime_abort(2);
+              primeimp[prime] := term1[l];
+              outcode[prime] := outcode1[l]
+            END
+        END;
+      FOR l:=k TO i DO
+        IF primeflag1[l] THEN
+          BEGIN
+            prime := SUCC(prime);
+            IF prime>prime_max THEN
+              runtime_abort(2);
+            primeimp[prime] := term1[l];
+            outcode[prime] := outcode1[l]
+          END;
+      i := j;
+      IF i>0 THEN
+        BEGIN
+          term1 := term2;
+          outcode1 := outcode2;
+          group1 := group2;
+          flag1 := groups_combine;
+          IF flag1 THEN
+            BEGIN
+              ones1 := ones2;
+              primeflag1 := primeflag2
+            END
         END
-      END;
-    IF primeflag1[l] THEN
-      BEGIN
-      prime:=SUCC(prime);
+      ELSE
+        flag1 := FALSE
+    END;
+  FOR j:=1 TO i DO
+    BEGIN
+      prime := SUCC(prime);
       IF prime>prime_max THEN
         runtime_abort(2);
-      primeimp[prime]:=term1[l];
-      outcode[prime]:=outcode1[l]
-      END
+      primeimp[prime] := term1[j];
+      outcode[prime] := outcode1[j]
     END;
-  FOR l:=k TO i DO
-  IF primeflag1[l] THEN
-    BEGIN
-    prime:=SUCC(prime);
-    IF prime>prime_max THEN
-      runtime_abort(2);
-    primeimp[prime]:=term1[l];
-    outcode[prime]:=outcode1[l]
-    END;
-  i:=j;
-  IF i>0 THEN
-    BEGIN
-    term1:=term2;
-    outcode1:=outcode2;
-    group1:=group2;
-    flag1:=groups_combine;
-    IF flag1 THEN
-      BEGIN
-      ones1:=ones2;
-      primeflag1:=primeflag2
-      END
-    END
-  ELSE
-    flag1:=FALSE
-  END;
-FOR j:=1 TO i DO
-  BEGIN
-  prime:=SUCC(prime);
-  IF prime>prime_max THEN
-    runtime_abort(2);
-  primeimp[prime]:=term1[j];
-  outcode[prime]:=outcode1[j]
-  END;
-WRITELN('Total Prime Imps      : ',prime:0)
+  WRITELN('Total Prime Imps      : ',prime:0)
 END;
 
 PROCEDURE reduce_primes;
 
-VAR
-  removed:PACKED ARRAY[1..prime_max] OF BOOLEAN;
-  repeated:PACKED ARRAY[1..prime_max] OF 0..product_max;
-  flag3:BOOLEAN;
+VAR 
+  removed: PACKED ARRAY[1..prime_max] OF BOOLEAN;
+  repeated: PACKED ARRAY[1..prime_max] OF 0..product_max;
+  flag3: BOOLEAN;
 
-FUNCTION in_column(x:LONGINT):BOOLEAN;
+FUNCTION in_column(x:LONGINT): BOOLEAN;
 
-VAR
-  flag:BOOLEAN;
-  z:LONGINT;
-
-BEGIN
-z:=0;
-REPEAT
-  z:=SUCC(z);
-  flag:=check[x,z]
-UNTIL (z=multiple) OR flag;
-in_column:=flag
-END;
-
-FUNCTION in_table(x,y:LONGINT):BOOLEAN;
-
-VAR
-  flag:BOOLEAN;
-  z:LONGINT;
+VAR 
+  flag: BOOLEAN;
+  z: LONGINT;
 
 BEGIN
-IF in_column(y) THEN
-  BEGIN
-  z:=0;
+  z := 0;
   REPEAT
-    z:=SUCC(z);
-    flag:=(primeimp[x,z]<>sX) AND (primeimp[x,z]<>mterm[y,z])
-  UNTIL (z=variable) OR flag;
-  in_table:=NOT flag
-  END
-ELSE
-  in_table:=FALSE
+    z := SUCC(z);
+    flag := check[x,z]
+  UNTIL (z=multiple) OR flag;
+  in_column := flag
 END;
 
-FUNCTION equal_output:BOOLEAN;
+FUNCTION in_table(x,y:LONGINT): BOOLEAN;
 
-VAR
-  flag:BOOLEAN;
-  z:LONGINT;
-
-BEGIN
-z:=0;
-REPEAT
-  z:=SUCC(z);
-  flag:=outcode[i,z] AND NOT outcode[j,z]
-UNTIL (z=multiple) OR flag;
-equal_output:=NOT flag
-END;
-
-FUNCTION less_cost:BOOLEAN;
-
-VAR
-  diff,z:LONGINT;
+VAR 
+  flag: BOOLEAN;
+  z: LONGINT;
 
 BEGIN
-diff:=0;
-FOR z:=1 TO variable DO
-  BEGIN
-  IF primeimp[i,z]=sX THEN
-    diff:=SUCC(diff);
-  IF primeimp[j,z]=sX THEN
-    diff:=PRED(diff)
-  END;
-less_cost:=diff<=0
-END;
-
-FUNCTION covers:BOOLEAN;
-
-VAR
-  flag:BOOLEAN;
-  z:LONGINT;
-
-BEGIN
-z:=0;
-REPEAT
-  z:=SUCC(z);
-  flag:=in_table(i,z) AND NOT in_table(j,z)
-UNTIL (z=term) OR flag;
-covers:=NOT flag
-END;
-
-BEGIN
-FOR i:=1 TO prime DO
-  BEGIN
-  essential[i]:=FALSE;
-  removed[i]:=FALSE
-  END;
-REPEAT
-  FOR i:=1 TO multiple DO
-  FOR j:=1 TO term DO
-  IF check[j,i] THEN
+  IF in_column(y) THEN
     BEGIN
-    k:=0;
-    l:=0;
-    REPEAT
-      k:=SUCC(k);
-      IF NOT removed[k] AND outcode[k,i] AND in_table(k,j) THEN
-        BEGIN
-        l:=SUCC(l);
-        o:=k
-        END
-    UNTIL (l=2) OR (k=prime);
-    IF l=0 THEN
-      check[j,i]:=FALSE
-    ELSE
-    IF l=1 THEN
-      BEGIN
-      essential[o]:=TRUE;
-      removed[o]:=TRUE;
-      FOR m:=1 TO term DO
-      IF in_table(o,m) THEN
-      FOR n:=1 TO multiple DO
-      IF outcode[o,n] THEN
-        check[m,n]:=FALSE
-      END
-    END;
-  i:=0;
-  REPEAT
-    i:=SUCC(i);
-    flag1:=in_column(i)
-  UNTIL (i=term) OR flag1;
-  flag2:=FALSE;
-  IF flag1 THEN
-    BEGIN
-    FOR i:=1 TO prime DO
-    IF NOT removed[i] THEN
-      BEGIN
-      j:=0;
+      z := 0;
       REPEAT
-        j:=SUCC(j);
-        flag3:=in_table(i,j)
-      UNTIL (j=term) OR flag3;
-      removed[i]:=NOT flag3
-      END;
-    FOR i:=1 TO prime DO
-    IF NOT removed[i] THEN
-      BEGIN
-      flag3:=FALSE;
-      j:=0;
-      REPEAT
-        j:=SUCC(j);
-        IF (j<>i) AND NOT removed[j] THEN
-        IF equal_output THEN
-        IF less_cost THEN
-        IF covers THEN
-          BEGIN
-          removed[i]:=TRUE;
-          flag2:=TRUE;
-          flag3:=TRUE
-          END
-      UNTIL (j=prime) OR flag3
-      END
+        z := SUCC(z);
+        flag := (primeimp[x,z]<>sX) AND (primeimp[x,z]<>mterm[y,z])
+      UNTIL (z=variable) OR flag;
+      in_table := NOT flag
     END
-UNTIL NOT flag2;
-n:=0;
-FOR i:=1 TO prime DO
-IF essential[i] THEN
-  n:=SUCC(n);
-WRITELN('1st reduced Prime Imps: ',n:0);
-n:=0;
-WHILE flag1 DO
-  BEGIN
-  flag1:=FALSE;
-  flag2:=FALSE;
-  FOR i:=1 TO prime DO
-    repeated[i]:=0;
-  FOR i:=1 TO term DO
-  IF in_column(i) THEN
-  FOR j:=1 TO multiple DO
-  IF check[i,j] THEN
-  FOR k:=1 TO prime DO
-  IF NOT removed[k] AND outcode[k,j] AND in_table(k,i) THEN
+  ELSE
+    in_table := FALSE
+END;
+
+FUNCTION equal_output: BOOLEAN;
+
+VAR 
+  flag: BOOLEAN;
+  z: LONGINT;
+
+BEGIN
+  z := 0;
+  REPEAT
+    z := SUCC(z);
+    flag := outcode[i,z] AND NOT outcode[j,z]
+  UNTIL (z=multiple) OR flag;
+  equal_output := NOT flag
+END;
+
+FUNCTION less_cost: BOOLEAN;
+
+VAR 
+  diff,z: LONGINT;
+
+BEGIN
+  diff := 0;
+  FOR z:=1 TO variable DO
     BEGIN
-    repeated[k]:=SUCC(repeated[k]);
-    flag2:=TRUE
+      IF primeimp[i,z]=sX THEN
+        diff := SUCC(diff);
+      IF primeimp[j,z]=sX THEN
+        diff := PRED(diff)
     END;
-  IF flag2 THEN
+  less_cost := diff<=0
+END;
+
+FUNCTION covers: BOOLEAN;
+
+VAR 
+  flag: BOOLEAN;
+  z: LONGINT;
+
+BEGIN
+  z := 0;
+  REPEAT
+    z := SUCC(z);
+    flag := in_table(i,z) AND NOT in_table(j,z)
+  UNTIL (z=term) OR flag;
+  covers := NOT flag
+END;
+
+BEGIN
+  FOR i:=1 TO prime DO
     BEGIN
-    i:=2;
-    j:=-1;
-    FOR k:=1 TO prime DO
-    IF repeated[k]>i THEN
-      BEGIN
-      i:=repeated[k];
-      o:=k;
-      flag1:=TRUE
-      END
-    ELSE
-    IF repeated[k]=i THEN
-      BEGIN
-      l:=0;
-      FOR m:=1 TO variable DO
-      IF primeimp[k,m]=sX THEN
-        l:=SUCC(l);
-      IF l>j THEN
-        BEGIN
-        o:=k;
-        j:=l;
-        flag1:=TRUE
-        END
-      END;
+      essential[i] := FALSE;
+      removed[i] := FALSE
+    END;
+  REPEAT
+    FOR i:=1 TO multiple DO
+      FOR j:=1 TO term DO
+        IF check[j,i] THEN
+          BEGIN
+            k := 0;
+            l := 0;
+            REPEAT
+              k := SUCC(k);
+              IF NOT removed[k] AND outcode[k,i] AND in_table(k,j) THEN
+                BEGIN
+                  l := SUCC(l);
+                  o := k
+                END
+            UNTIL (l=2) OR (k=prime);
+            IF l=0 THEN
+              check[j,i] := FALSE
+            ELSE
+              IF l=1 THEN
+                BEGIN
+                  essential[o] := TRUE;
+                  removed[o] := TRUE;
+                  FOR m:=1 TO term DO
+                    IF in_table(o,m) THEN
+                      FOR n:=1 TO multiple DO
+                        IF outcode[o,n] THEN
+                          check[m,n] := FALSE
+                END
+          END;
+    i := 0;
+    REPEAT
+      i := SUCC(i);
+      flag1 := in_column(i)
+    UNTIL (i=term) OR flag1;
+    flag2 := FALSE;
     IF flag1 THEN
       BEGIN
-      n:=SUCC(n);
-      essential[o]:=TRUE;
-      removed[o]:=TRUE;
-      FOR i:=1 TO term DO
-      IF in_table(o,i) THEN
-      FOR j:=1 TO multiple DO
-      IF outcode[o,j] THEN
-        check[i,j]:=FALSE
+        FOR i:=1 TO prime DO
+          IF NOT removed[i] THEN
+            BEGIN
+              j := 0;
+              REPEAT
+                j := SUCC(j);
+                flag3 := in_table(i,j)
+              UNTIL (j=term) OR flag3;
+              removed[i] := NOT flag3
+            END;
+        FOR i:=1 TO prime DO
+          IF NOT removed[i] THEN
+            BEGIN
+              flag3 := FALSE;
+              j := 0;
+              REPEAT
+                j := SUCC(j);
+                IF (j<>i) AND NOT removed[j] THEN
+                  IF equal_output THEN
+                    IF less_cost THEN
+                      IF covers THEN
+                        BEGIN
+                          removed[i] := TRUE;
+                          flag2 := TRUE;
+                          flag3 := TRUE
+                        END
+              UNTIL (j=prime) OR flag3
+            END
       END
-    END
-  END;
-WRITELN('2nd reduced Prime Imps: ',n:0);
-product:=0;
-IF flag2 THEN
-  BEGIN
-  i:=1;
-  FOR j:=1 TO term DO
-  IF in_column(j) THEN
-  FOR k:=1 TO multiple DO
-  IF check[j,k] THEN
+  UNTIL NOT flag2;
+  n := 0;
+  FOR i:=1 TO prime DO
+    IF essential[i] THEN
+      n := SUCC(n);
+  WRITELN('1st reduced Prime Imps: ',n:0);
+  n := 0;
+  WHILE flag1 DO
     BEGIN
-    product:=SUCC(product);
-    IF product>product_max THEN
-      runtime_abort(3);
-    count[product]:=0;
-    FOR l:=1 TO prime DO
-    IF NOT removed[l] AND outcode[l,k] AND in_table(l,j) THEN
-      BEGIN
-      count[product]:=SUCC(count[product]);
-      petrick[i]:=l;
-      i:=SUCC(i)
-      END
-    END
-  END;
-WRITELN('3rd reduced Prime Imps: ',product:0)
+      flag1 := FALSE;
+      flag2 := FALSE;
+      FOR i:=1 TO prime DO
+        repeated[i] := 0;
+      FOR i:=1 TO term DO
+        IF in_column(i) THEN
+          FOR j:=1 TO multiple DO
+            IF check[i,j] THEN
+              FOR k:=1 TO prime DO
+                IF NOT removed[k] AND outcode[k,j] AND in_table(k,i) THEN
+                  BEGIN
+                    repeated[k] := SUCC(repeated[k]);
+                    flag2 := TRUE
+                  END;
+      IF flag2 THEN
+        BEGIN
+          i := 2;
+          j := -1;
+          FOR k:=1 TO prime DO
+            IF repeated[k]>i THEN
+              BEGIN
+                i := repeated[k];
+                o := k;
+                flag1 := TRUE
+              END
+            ELSE
+              IF repeated[k]=i THEN
+                BEGIN
+                  l := 0;
+                  FOR m:=1 TO variable DO
+                    IF primeimp[k,m]=sX THEN
+                      l := SUCC(l);
+                  IF l>j THEN
+                    BEGIN
+                      o := k;
+                      j := l;
+                      flag1 := TRUE
+                    END
+                END;
+          IF flag1 THEN
+            BEGIN
+              n := SUCC(n);
+              essential[o] := TRUE;
+              removed[o] := TRUE;
+              FOR i:=1 TO term DO
+                IF in_table(o,i) THEN
+                  FOR j:=1 TO multiple DO
+                    IF outcode[o,j] THEN
+                      check[i,j] := FALSE
+            END
+        END
+    END;
+  WRITELN('2nd reduced Prime Imps: ',n:0);
+  product := 0;
+  IF flag2 THEN
+    BEGIN
+      i := 1;
+      FOR j:=1 TO term DO
+        IF in_column(j) THEN
+          FOR k:=1 TO multiple DO
+            IF check[j,k] THEN
+              BEGIN
+                product := SUCC(product);
+                IF product>product_max THEN
+                  runtime_abort(3);
+                count[product] := 0;
+                FOR l:=1 TO prime DO
+                  IF NOT removed[l] AND outcode[l,k] AND in_table(l,j) THEN
+                    BEGIN
+                      count[product] := SUCC(count[product]);
+                      petrick[i] := l;
+                      i := SUCC(i)
+                    END
+              END
+    END;
+  WRITELN('3rd reduced Prime Imps: ',product:0)
 END;
 
 PROCEDURE petrick_primes;
 
-VAR
-  best:pointer;
+VAR 
+  best: pointer;
 
 BEGIN
-m:=0;
-FOR i:=1 TO product DO
-  BEGIN
-  n:=-1;
-  FOR j:=1 TO count[i] DO
+  m := 0;
+  FOR i:=1 TO product DO
     BEGIN
-    m:=SUCC(m);
-    o:=petrick[m];
-    k:=0;
-    l:=0;
-    REPEAT
-      k:=SUCC(k);
-      IF primeimp[o,k]=sX THEN
-        l:=SUCC(l)
-    UNTIL k>=variable-max(n-l,0);
-    IF l>n THEN
-      BEGIN
-      n:=l;
-      best:=o
-      END
-    END;
-  essential[best]:=TRUE
-  END
+      n := -1;
+      FOR j:=1 TO count[i] DO
+        BEGIN
+          m := SUCC(m);
+          o := petrick[m];
+          k := 0;
+          l := 0;
+          REPEAT
+            k := SUCC(k);
+            IF primeimp[o,k]=sX THEN
+              l := SUCC(l)
+          UNTIL k>=variable-max(n-l,0);
+          IF l>n THEN
+            BEGIN
+              n := l;
+              best := o
+            END
+        END;
+      essential[best] := TRUE
+    END
 END;
 
 PROCEDURE simplify_primes;
 
-VAR
-  termtable:BitsMatrix;
-  bit01,bitX:PACKED ARRAY[1..variable_max] OF BOOLEAN;
+VAR 
+  termtable: BitsMatrix;
+  bit01,bitX: PACKED ARRAY[1..variable_max] OF BOOLEAN;
 
-FUNCTION common_terms:BOOLEAN;
+FUNCTION common_terms: BOOLEAN;
 
-VAR
-  flag:BOOLEAN;
-  z:LONGINT;
+VAR 
+  flag: BOOLEAN;
+  z: LONGINT;
 
 BEGIN
-z:=0;
-REPEAT
-  z:=SUCC(z);
-  flag:=(primeimp[i,z]<>sX) AND (primeimp[k,z]<>sX) AND (primeimp[i,z]<>primeimp[k,z])
-UNTIL (z=variable) OR flag;
-common_terms:=NOT flag
+  z := 0;
+  REPEAT
+    z := SUCC(z);
+    flag := (primeimp[i,z]<>sX) AND (primeimp[k,z]<>sX) AND (primeimp[i,z]<>primeimp[k,z])
+  UNTIL (z=variable) OR flag;
+  common_terms := NOT flag
 END;
 
 PROCEDURE set_up(x:input_code);
 
-VAR
-  z:LONGINT;
+VAR 
+  z: LONGINT;
 
 BEGIN
-flag2:=TRUE;
-FOR z:=1 TO variable DO
-CASE x[z] OF
-  s0:
-    BEGIN
-    bit01[z]:=FALSE;
-    bitX[z]:=FALSE
-    END;
-  s1:
-    BEGIN
-    bit01[z]:=TRUE;
-    bitX[z]:=FALSE
-    END;
-  sX:
-    BEGIN
-    bit01[z]:=FALSE;
-    bitX[z]:=TRUE;
-    flag2:=FALSE
+  flag2 := TRUE;
+  FOR z:=1 TO variable DO
+    CASE x[z] OF 
+      s0:
+          BEGIN
+            bit01[z] := FALSE;
+            bitX[z] := FALSE
+          END;
+      s1:
+          BEGIN
+            bit01[z] := TRUE;
+            bitX[z] := FALSE
+          END;
+      sX:
+          BEGIN
+            bit01[z] := FALSE;
+            bitX[z] := TRUE;
+            flag2 := FALSE
+          END
     END
-  END
 END;
 
-FUNCTION term_value:QWORD;
+FUNCTION term_value: QWORD;
 
-VAR
-  value,weight:QWORD;
-  z:LONGINT;
+VAR 
+  value,weight: QWORD;
+  z: LONGINT;
 
 BEGIN
-value:=1;
-weight:=1;
-FOR z:=1 TO variable DO
-  BEGIN
-  IF bit01[z] THEN
-    value:=value+weight;
-  weight:=2*weight
-  END;
-term_value:=value
+  value := 1;
+  weight := 1;
+  FOR z:=1 TO variable DO
+    BEGIN
+      IF bit01[z] THEN
+        value := value+weight;
+      weight := 2*weight
+    END;
+  term_value := value
 END;
 
 PROCEDURE next_term;
 
-VAR
-  z:LONGINT;
+VAR 
+  z: LONGINT;
 
 BEGIN
-z:=0;
-REPEAT
-  z:=SUCC(z);
-  IF bitX[z] THEN
-    BEGIN
-    bit01[z]:=NOT bit01[z];
-    flag2:=bit01[z]
-    END
-UNTIL (z=variable) OR flag2
+  z := 0;
+  REPEAT
+    z := SUCC(z);
+    IF bitX[z] THEN
+      BEGIN
+        bit01[z] := NOT bit01[z];
+        flag2 := bit01[z]
+      END
+  UNTIL (z=variable) OR flag2
 END;
 
 PROCEDURE fill_termtable;
 
 BEGIN
-set_up(primeimp[k]);
-IF flag2 THEN
-  SetBM(@termtable,0,term_value,1)
-ELSE
-REPEAT
-  SetBM(@termtable,0,term_value,1);
-  flag2:=FALSE;
-  next_term
-UNTIL NOT flag2
-END;
-
-FUNCTION redundant:BOOLEAN;
-
-VAR
-  flag:BOOLEAN;
-
-BEGIN
-set_up(primeimp[i]);
-IF flag2 THEN
-  redundant:=TRUE
-ELSE
-  BEGIN
-  REPEAT
-    flag2:=FALSE;
-    flag:=BOOLEAN(GetBM(@termtable,0,term_value));
-    IF flag THEN
-      next_term
-  UNTIL NOT flag OR NOT flag2;
-  redundant:=flag
-  END
-END;
-
-BEGIN
-n:=0;
-FOR i:=1 TO prime DO
-IF essential[i] THEN
-  BEGIN
-  flag1:=FALSE;
-  FOR j:=1 TO multiple DO
-  IF outcode[i,j] THEN
-    BEGIN
-    flag2:=FALSE;
-    k:=0;
+  set_up(primeimp[k]);
+  IF flag2 THEN
+    SetBM(@termtable,0,term_value,1)
+  ELSE
     REPEAT
-      k:=SUCC(k);
-      IF (i<>k) AND essential[k] AND outcode[k,j] THEN
-      IF common_terms THEN
-        BEGIN
-        InitBM(@termtable,1);
-        fill_termtable;
-        flag2:=redundant;
-        CleanBM(@termtable)
-        END
-    UNTIL (k=prime) OR flag2;
-    outcode[i,j]:=NOT flag2;
-    flag1:=flag1 OR NOT flag2
-    END;
-  essential[i]:=flag1;
-  IF NOT flag1 THEN
-    n:=SUCC(n)
-  END;
-WRITELN('<Redundant> Prime Imps: ',n:0)
+      SetBM(@termtable,0,term_value,1);
+      flag2 := FALSE;
+      next_term
+    UNTIL NOT flag2
+END;
+
+FUNCTION redundant: BOOLEAN;
+
+VAR 
+  flag: BOOLEAN;
+
+BEGIN
+  set_up(primeimp[i]);
+  IF flag2 THEN
+    redundant := TRUE
+  ELSE
+    BEGIN
+      REPEAT
+        flag2 := FALSE;
+        flag := BOOLEAN(GetBM(@termtable,0,term_value));
+        IF flag THEN
+          next_term
+      UNTIL NOT flag OR NOT flag2;
+      redundant := flag
+    END
+END;
+
+BEGIN
+  n := 0;
+  FOR i:=1 TO prime DO
+    IF essential[i] THEN
+      BEGIN
+        flag1 := FALSE;
+        FOR j:=1 TO multiple DO
+          IF outcode[i,j] THEN
+            BEGIN
+              flag2 := FALSE;
+              k := 0;
+              REPEAT
+                k := SUCC(k);
+                IF (i<>k) AND essential[k] AND outcode[k,j] THEN
+                  IF common_terms THEN
+                    BEGIN
+                      InitBM(@termtable,1);
+                      fill_termtable;
+                      flag2 := redundant;
+                      CleanBM(@termtable)
+                    END
+              UNTIL (k=prime) OR flag2;
+              outcode[i,j] := NOT flag2;
+              flag1 := flag1 OR NOT flag2
+            END;
+        essential[i] := flag1;
+        IF NOT flag1 THEN
+          n := SUCC(n)
+      END;
+  WRITELN('<Redundant> Prime Imps: ',n:0)
 END;
 
 PROCEDURE sort_primes;
 
-FUNCTION reverse_order:BOOLEAN;
+FUNCTION reverse_order: BOOLEAN;
 
-VAR
-  flag:BOOLEAN;
-  diff,z:LONGINT;
+VAR 
+  flag: BOOLEAN;
+  diff,z: LONGINT;
 
 BEGIN
-diff:=0;
-FOR z:=1 TO multiple DO
-  BEGIN
-  IF outcode[j,z] THEN
-    diff:=SUCC(diff);
-  IF outcode[SUCC(j),z] THEN
-    diff:=PRED(diff)
-  END;
-IF diff<>0 THEN
-  reverse_order:=diff<0
-ELSE
-  BEGIN
-  z:=0;
-  REPEAT
-    z:=SUCC(z);
-    flag:=outcode[j,z]<>outcode[SUCC(j),z]
-  UNTIL (z=multiple) OR flag;
-  reverse_order:=flag AND NOT outcode[j,z]
-  END
+  diff := 0;
+  FOR z:=1 TO multiple DO
+    BEGIN
+      IF outcode[j,z] THEN
+        diff := SUCC(diff);
+      IF outcode[SUCC(j),z] THEN
+        diff := PRED(diff)
+    END;
+  IF diff<>0 THEN
+    reverse_order := diff<0
+  ELSE
+    BEGIN
+      z := 0;
+      REPEAT
+        z := SUCC(z);
+        flag := outcode[j,z]<>outcode[SUCC(j),z]
+      UNTIL (z=multiple) OR flag;
+      reverse_order := flag AND NOT outcode[j,z]
+    END
 END;
 
 BEGIN
-i:=0;
-FOR j:=1 TO prime DO
-IF essential[j] THEN
-  BEGIN
-  i:=SUCC(i);
-  primeimp[i]:=primeimp[j];
-  outcode[i]:=outcode[j]
-  END;
-prime:=i;
-FOR i:=1 TO prime DIV 2 DO
-  BEGIN
-  j:=SUCC(prime)-i;
-  primeimp[0]:=primeimp[i];
-  outcode[0]:=outcode[i];
-  primeimp[i]:=primeimp[j];
-  outcode[i]:=outcode[j];
-  primeimp[j]:=primeimp[0];
-  outcode[j]:=outcode[0]
-  END;
-FOR i:=1 TO PRED(prime) DO
-FOR j:=1 TO prime-i DO
-IF reverse_order THEN
-  BEGIN
-  k:=SUCC(j);
-  primeimp[0]:=primeimp[k];
-  outcode[0]:=outcode[k];
-  primeimp[k]:=primeimp[j];
-  outcode[k]:=outcode[j];
-  primeimp[j]:=primeimp[0];
-  outcode[j]:=outcode[0]
-  END;
-WRITELN('<Essential> Prime Imps: ',prime:0)
+  i := 0;
+  FOR j:=1 TO prime DO
+    IF essential[j] THEN
+      BEGIN
+        i := SUCC(i);
+        primeimp[i] := primeimp[j];
+        outcode[i] := outcode[j]
+      END;
+  prime := i;
+  FOR i:=1 TO prime DIV 2 DO
+    BEGIN
+      j := SUCC(prime)-i;
+      primeimp[0] := primeimp[i];
+      outcode[0] := outcode[i];
+      primeimp[i] := primeimp[j];
+      outcode[i] := outcode[j];
+      primeimp[j] := primeimp[0];
+      outcode[j] := outcode[0]
+    END;
+  FOR i:=1 TO PRED(prime) DO
+    FOR j:=1 TO prime-i DO
+      IF reverse_order THEN
+        BEGIN
+          k := SUCC(j);
+          primeimp[0] := primeimp[k];
+          outcode[0] := outcode[k];
+          primeimp[k] := primeimp[j];
+          outcode[k] := outcode[j];
+          primeimp[j] := primeimp[0];
+          outcode[j] := outcode[0]
+        END;
+  WRITELN('<Essential> Prime Imps: ',prime:0)
 END;
 
 PROCEDURE output_data;
 
-VAR
-  flag3:BOOLEAN;
+VAR 
+  flag3: BOOLEAN;
 
 PROCEDURE truth_table;
 
 BEGIN
-WRITELN('##### Truth Table');
-WRITELN;
-IF prime>0 THEN
-  BEGIN
-  FOR i:=1 TO prime DO
+  WRITELN('##### Truth Table');
+  WRITELN;
+  IF prime>0 THEN
     BEGIN
-    FOR j:=1 TO variable DO
-    CASE primeimp[i,j] OF
-      s0:
-        WRITE(zero);
-      s1:
-        WRITE(one);
-      sX:
-        WRITE(dont_care)
-      END;
-    WRITE(space);
-    FOR j:=1 TO multiple DO
-    IF outlevel[j]=outcode[i,j] THEN
-      WRITE(one)
-    ELSE
-      WRITE(zero);
-    WRITELN
+      FOR i:=1 TO prime DO
+        BEGIN
+          FOR j:=1 TO variable DO
+            CASE primeimp[i,j] OF 
+              s0:
+                  WRITE(zero);
+              s1:
+                  WRITE(one);
+              sX:
+                  WRITE(dont_care)
+            END;
+          WRITE(space);
+          FOR j:=1 TO multiple DO
+            IF outlevel[j]=outcode[i,j] THEN
+              WRITE(one)
+            ELSE
+              WRITE(zero);
+          WRITELN
+        END
     END
-  END
-ELSE
-  WRITELN('None');
-WRITELN
+  ELSE
+    WRITELN('None');
+  WRITELN
 END;
 
 PROCEDURE equations;
 
-VAR
-  common1,common2,primetable:PACKED ARRAY[1..prime_max] OF pointer;
+VAR 
+  common1,common2,primetable: PACKED ARRAY[1..prime_max] OF pointer;
 
-FUNCTION prime_pointer:LONGINT;
+FUNCTION prime_pointer: LONGINT;
 
-VAR
-  order,order_max,p,z:LONGINT;
+VAR 
+  order,order_max,p,z: LONGINT;
 
-FUNCTION prime_order(p:LONGINT):LONGINT;
+FUNCTION prime_order(p:LONGINT): LONGINT;
 
-VAR
-  order,z:LONGINT;
+VAR 
+  order,z: LONGINT;
 
 BEGIN
-order:=variable;
-FOR z:=1 TO variable DO
-IF primeimp[p,z]=sX THEN
-  order:=PRED(order);
-prime_order:=order
+  order := variable;
+  FOR z:=1 TO variable DO
+    IF primeimp[p,z]=sX THEN
+      order := PRED(order);
+  prime_order := order
 END;
 
-FUNCTION covers_prime(p:LONGINT):BOOLEAN;
+FUNCTION covers_prime(p:LONGINT): BOOLEAN;
 
-VAR
-  flag:BOOLEAN;
-  z:LONGINT;
-
-BEGIN
-z:=0;
-REPEAT
-  z:=SUCC(z);
-  flag:=(primeimp[p,z]<>sX) AND (primeimp[p,z]<>primeimp[j,z])
-UNTIL (z=variable) OR flag;
-covers_prime:=NOT flag
-END;
+VAR 
+  flag: BOOLEAN;
+  z: LONGINT;
 
 BEGIN
-prime_pointer:=0;
-order:=PRED(prime_order(j));
-IF order>1 THEN
-  BEGIN
-  order_max:=1;
-  z:=0;
+  z := 0;
   REPEAT
-    z:=SUCC(z);
-    IF z<>j THEN
-    IF covers_prime(z) THEN
-    IF prime_order(z)>order_max THEN
-      BEGIN
-      order_max:=prime_order(z);
-      p:=z
-      END
-  UNTIL (z=prime) OR (order=order_max);
-  IF order_max>1 THEN
-    prime_pointer:=p
-  END
-END;
-
-FUNCTION common_outputs:BOOLEAN;
-
-VAR
-  flag:BOOLEAN;
-  x,z:LONGINT;
-
-BEGIN
-flag:=FALSE;
-x:=0;
-REPEAT
-  x:=SUCC(x);
-  IF outcode[j,x] THEN
-    BEGIN
-    z:=x;
-    REPEAT
-      z:=SUCC(z);
-      flag:=outcode[j,z]
-    UNTIL (z=multiple) OR flag
-  END
-UNTIL (x=PRED(multiple)) OR flag;
-common_outputs:=flag
-END;
-
-FUNCTION different_outputs:BOOLEAN;
-
-VAR
-  flag:BOOLEAN;
-  z:LONGINT;
-
-BEGIN
-IF j=1 THEN
-  different_outputs:=TRUE
-ELSE
-  BEGIN
-  z:=0;
-  REPEAT
-    z:=SUCC(z);
-    flag:=outcode[j,z]<>outcode[PRED(j),z]
-  UNTIL (z=multiple) OR flag;
-  different_outputs:=flag
-  END
+    z := SUCC(z);
+    flag := (primeimp[p,z]<>sX) AND (primeimp[p,z]<>primeimp[j,z])
+  UNTIL (z=variable) OR flag;
+  covers_prime := NOT flag
 END;
 
 BEGIN
-WRITE('##### Boolean Equation');
-IF multiple>1 THEN
-  WRITELN('s');
-FOR i:=1 TO prime DO
-  common1[i]:=0;
-IF equat_flag>=3 THEN
-  BEGIN
-  i:=0;
-  FOR j:=1 TO prime DO
+  prime_pointer := 0;
+  order := PRED(prime_order(j));
+  IF order>1 THEN
     BEGIN
-    k:=prime_pointer;
-    primetable[j]:=k;
-    IF k<>0 THEN
-    IF common1[k]=0 THEN
-      BEGIN
-      i:=SUCC(i);
-      common1[k]:=i;
-      WRITELN;
-      WRITE(common1_name,i:0,assign_op);
-      flag3:=FALSE;
-      FOR l:=1 TO variable DO
-      WITH inpsignal[l] DO
-      IF primeimp[k,l] IN [s0,s1] THEN
-        BEGIN
-        IF flag3 THEN
-          WRITE(and_op);
-        IF (primeimp[k,l]=s0)=state THEN
-          WRITE(invert_op);
-        WRITE(name);
-        flag3:=TRUE
-        END;
-      WRITELN
-      END
-    END;
-  WRITELN;
-  IF i=0 THEN
-    WRITE('No')
-  ELSE
-    WRITE(i:0);
-  WRITE(' Term Common Expression');
-  IF i<>1 THEN
-    WRITELN('s')
-  END
-ELSE
-FOR i:=1 TO prime DO
-  primetable[i]:=0;
-IF equat_flag>=2 THEN
-  BEGIN
-  i:=0;
-  j:=1;
-  WHILE (j<=prime) AND common_outputs DO
-    BEGIN
-    IF (equat_flag<=3) OR different_outputs THEN
-      BEGIN
-      i:=SUCC(i);
-      WRITELN;
-      WRITE(common2_name,i:0,assign_op);
-      k:=common2_len+SUCC(TRUNC(LN(i)/LN(10)))
-      END
-    ELSE
-      WRITE(space:k,or_op);
-    common2[j]:=i;
-    IF common1[j]<>0 THEN
-      WRITE(common1_name,common1[j]:0)
-    ELSE
-    IF primetable[j]<>0 THEN
-      BEGIN
-      m:=primetable[j];
-      WRITE(common1_name,common1[m]:0);
-      FOR l:=1 TO variable DO
-      IF primeimp[j,l]<>primeimp[m,l] THEN
-      WITH inpsignal[l] DO
-      IF primeimp[j,l] IN [s0,s1] THEN
-        BEGIN
-        WRITE(and_op);
-        IF (primeimp[j,l]=s0)=state THEN
-          WRITE(invert_op);
-        WRITE(name)
-        END
-      END
-    ELSE
-      BEGIN
-      l:=0;
+      order_max := 1;
+      z := 0;
       REPEAT
-        l:=SUCC(l);
-        flag2:=primeimp[j,l]<>sX
-      UNTIL (l=variable) OR flag2;
-      IF flag2 THEN
-        BEGIN
-        flag3:=FALSE;
-        FOR l:=1 TO variable DO
-        WITH inpsignal[l] DO
-        IF primeimp[j,l] IN [s0,s1] THEN
-          BEGIN
-          IF flag3 THEN
-            WRITE(and_op);
-          IF (primeimp[j,l]=s0)=state THEN
-            WRITE(invert_op);
-          WRITE(name);
-          flag3:=TRUE
-          END
-        END
-      ELSE
-        WRITE(one)
-      END;
-    j:=SUCC(j);
-    WRITELN
-    END;
-  FOR k:=j TO prime DO
-    common2[k]:=0;
-  WRITELN;
-  IF i=0 THEN
-    WRITE('No')
-  ELSE
-    WRITE(i:0);
-  WRITE(' Prime Imps Common Expression');
-  IF i<>1 THEN
-    WRITELN('s')
-  END
-ELSE
-FOR i:=1 TO prime DO
-  common2[i]:=0;
-FOR i:=1 TO multiple DO
-  BEGIN
-  WRITELN;
-  WITH outsignal[i] DO
-    BEGIN
-    IF outlevel[i]=state THEN
-      k:=LENGTH(name)
-    ELSE
-      BEGIN
-      WRITE(invert_op);
-      k:=SUCC(LENGTH(name))
-      END;
-    WRITE(name,assign_op)
-    END;
-  flag1:=TRUE;
-  flag2:=TRUE;
-  j:=0;
+        z := SUCC(z);
+        IF z<>j THEN
+          IF covers_prime(z) THEN
+            IF prime_order(z)>order_max THEN
+              BEGIN
+                order_max := prime_order(z);
+                p := z
+              END
+      UNTIL (z=prime) OR (order=order_max);
+      IF order_max>1 THEN
+        prime_pointer := p
+    END
+END;
+
+FUNCTION common_outputs: BOOLEAN;
+
+VAR 
+  flag: BOOLEAN;
+  x,z: LONGINT;
+
+BEGIN
+  flag := FALSE;
+  x := 0;
   REPEAT
-    j:=SUCC(j);
-    IF outcode[j,i] THEN
-    IF common2[j]=0 THEN
+    x := SUCC(x);
+    IF outcode[j,x] THEN
       BEGIN
-      IF NOT flag1 THEN
-        BEGIN
-        WRITELN;
-        WRITE(space:k,or_op)
-        END;
-      flag1:=FALSE;
-      IF common1[j]<>0 THEN
-        WRITE(common1_name,common1[j]:0)
-      ELSE
-      IF primetable[j]<>0 THEN
-        BEGIN
-        m:=primetable[j];
-        WRITE(common1_name,common1[m]:0);
-        FOR l:=1 TO variable DO
-        IF primeimp[j,l]<>primeimp[m,l] THEN
-        WITH inpsignal[l] DO
-        IF primeimp[j,l] IN [s0,s1] THEN
-          BEGIN
-          WRITE(and_op);
-          IF (primeimp[j,l]=s0)=state THEN
-            WRITE(invert_op);
-          WRITE(name)
-          END
-        END
-      ELSE
-        BEGIN
-        l:=0;
+        z := x;
         REPEAT
-          l:=SUCC(l);
-          flag2:=primeimp[j,l]<>sX
-        UNTIL (l=variable) OR flag2;
-        IF flag2 THEN
-          BEGIN
-          flag3:=FALSE;
-          FOR l:=1 TO variable DO
-          WITH inpsignal[l] DO
-          IF primeimp[j,l] IN [s0,s1] THEN
+          z := SUCC(z);
+          flag := outcode[j,z]
+        UNTIL (z=multiple) OR flag
+      END
+  UNTIL (x=PRED(multiple)) OR flag;
+  common_outputs := flag
+END;
+
+FUNCTION different_outputs: BOOLEAN;
+
+VAR 
+  flag: BOOLEAN;
+  z: LONGINT;
+
+BEGIN
+  IF j=1 THEN
+    different_outputs := TRUE
+  ELSE
+    BEGIN
+      z := 0;
+      REPEAT
+        z := SUCC(z);
+        flag := outcode[j,z]<>outcode[PRED(j),z]
+      UNTIL (z=multiple) OR flag;
+      different_outputs := flag
+    END
+END;
+
+BEGIN
+  WRITE('##### Boolean Equation');
+  IF multiple>1 THEN
+    WRITELN('s');
+  FOR i:=1 TO prime DO
+    common1[i] := 0;
+  IF equat_flag>=3 THEN
+    BEGIN
+      i := 0;
+      FOR j:=1 TO prime DO
+        BEGIN
+          k := prime_pointer;
+          primetable[j] := k;
+          IF k<>0 THEN
+            IF common1[k]=0 THEN
+              BEGIN
+                i := SUCC(i);
+                common1[k] := i;
+                WRITELN;
+                WRITE(common1_name,i:0,assign_op);
+                flag3 := FALSE;
+                FOR l:=1 TO variable DO
+                  WITH inpsignal[l] DO
+                    IF primeimp[k,l] IN [s0,s1] THEN
+                      BEGIN
+                        IF flag3 THEN
+                          WRITE(and_op);
+                        IF (primeimp[k,l]=s0)=state THEN
+                          WRITE(invert_op);
+                        WRITE(name);
+                        flag3 := TRUE
+                      END;
+                WRITELN
+              END
+        END;
+      WRITELN;
+      IF i=0 THEN
+        WRITE('No')
+      ELSE
+        WRITE(i:0);
+      WRITE(' Term Common Expression');
+      IF i<>1 THEN
+        WRITELN('s')
+    END
+  ELSE
+    FOR i:=1 TO prime DO
+      primetable[i] := 0;
+  IF equat_flag>=2 THEN
+    BEGIN
+      i := 0;
+      j := 1;
+      WHILE (j<=prime) AND common_outputs DO
+        BEGIN
+          IF (equat_flag<=3) OR different_outputs THEN
             BEGIN
-            IF flag3 THEN
-              WRITE(and_op);
-            IF (primeimp[j,l]=s0)=state THEN
-              WRITE(invert_op);
-            WRITE(name);
-            flag3:=TRUE
+              i := SUCC(i);
+              WRITELN;
+              WRITE(common2_name,i:0,assign_op);
+              k := common2_len+SUCC(TRUNC(LN(i)/LN(10)))
             END
-          END
+          ELSE
+            WRITE(space:k,or_op);
+          common2[j] := i;
+          IF common1[j]<>0 THEN
+            WRITE(common1_name,common1[j]:0)
+          ELSE
+            IF primetable[j]<>0 THEN
+              BEGIN
+                m := primetable[j];
+                WRITE(common1_name,common1[m]:0);
+                FOR l:=1 TO variable DO
+                  IF primeimp[j,l]<>primeimp[m,l] THEN
+                    WITH inpsignal[l] DO
+                      IF primeimp[j,l] IN [s0,s1] THEN
+                        BEGIN
+                          WRITE(and_op);
+                          IF (primeimp[j,l]=s0)=state THEN
+                            WRITE(invert_op);
+                          WRITE(name)
+                        END
+              END
+          ELSE
+            BEGIN
+              l := 0;
+              REPEAT
+                l := SUCC(l);
+                flag2 := primeimp[j,l]<>sX
+              UNTIL (l=variable) OR flag2;
+              IF flag2 THEN
+                BEGIN
+                  flag3 := FALSE;
+                  FOR l:=1 TO variable DO
+                    WITH inpsignal[l] DO
+                      IF primeimp[j,l] IN [s0,s1] THEN
+                        BEGIN
+                          IF flag3 THEN
+                            WRITE(and_op);
+                          IF (primeimp[j,l]=s0)=state THEN
+                            WRITE(invert_op);
+                          WRITE(name);
+                          flag3 := TRUE
+                        END
+                END
+              ELSE
+                WRITE(one)
+            END;
+          j := SUCC(j);
+          WRITELN
+        END;
+      FOR k:=j TO prime DO
+        common2[k] := 0;
+      WRITELN;
+      IF i=0 THEN
+        WRITE('No')
+      ELSE
+        WRITE(i:0);
+      WRITE(' Prime Imps Common Expression');
+      IF i<>1 THEN
+        WRITELN('s')
+    END
+  ELSE
+    FOR i:=1 TO prime DO
+      common2[i] := 0;
+  FOR i:=1 TO multiple DO
+    BEGIN
+      WRITELN;
+      WITH outsignal[i] DO
+        BEGIN
+          IF outlevel[i]=state THEN
+            k := LENGTH(name)
+          ELSE
+            BEGIN
+              WRITE(invert_op);
+              k := SUCC(LENGTH(name))
+            END;
+          WRITE(name,assign_op)
+        END;
+      flag1 := TRUE;
+      flag2 := TRUE;
+      j := 0;
+      REPEAT
+        j := SUCC(j);
+        IF outcode[j,i] THEN
+          IF common2[j]=0 THEN
+            BEGIN
+              IF NOT flag1 THEN
+                BEGIN
+                  WRITELN;
+                  WRITE(space:k,or_op)
+                END;
+              flag1 := FALSE;
+              IF common1[j]<>0 THEN
+                WRITE(common1_name,common1[j]:0)
+              ELSE
+                IF primetable[j]<>0 THEN
+                  BEGIN
+                    m := primetable[j];
+                    WRITE(common1_name,common1[m]:0);
+                    FOR l:=1 TO variable DO
+                      IF primeimp[j,l]<>primeimp[m,l] THEN
+                        WITH inpsignal[l] DO
+                          IF primeimp[j,l] IN [s0,s1] THEN
+                            BEGIN
+                              WRITE(and_op);
+                              IF (primeimp[j,l]=s0)=state THEN
+                                WRITE(invert_op);
+                              WRITE(name)
+                            END
+                  END
+              ELSE
+                BEGIN
+                  l := 0;
+                  REPEAT
+                    l := SUCC(l);
+                    flag2 := primeimp[j,l]<>sX
+                  UNTIL (l=variable) OR flag2;
+                  IF flag2 THEN
+                    BEGIN
+                      flag3 := FALSE;
+                      FOR l:=1 TO variable DO
+                        WITH inpsignal[l] DO
+                          IF primeimp[j,l] IN [s0,s1] THEN
+                            BEGIN
+                              IF flag3 THEN
+                                WRITE(and_op);
+                              IF (primeimp[j,l]=s0)=state THEN
+                                WRITE(invert_op);
+                              WRITE(name);
+                              flag3 := TRUE
+                            END
+                    END
+                  ELSE
+                    WRITE(one)
+                END
+            END
         ELSE
-          WRITE(one)
-        END
-      END
-    ELSE
-    IF j=1 THEN
-      BEGIN
-      IF NOT flag1 THEN
-        BEGIN
-        WRITELN;
-        WRITE(space:k,or_op)
-        END;
-      flag1:=FALSE;
-      WRITE(common2_name,1:0)
-      END
-    ELSE
-    IF common2[j]<>common2[PRED(j)] THEN
-      BEGIN
-      IF NOT flag1 THEN
-        BEGIN
-        WRITELN;
-        WRITE(space:k,or_op)
-        END;
-      flag1:=FALSE;
-      WRITE(common2_name,common2[j]:0)
-      END
-  UNTIL (j=prime) OR NOT flag2;
-  IF flag1 THEN
-    WRITE(zero);
+          IF j=1 THEN
+            BEGIN
+              IF NOT flag1 THEN
+                BEGIN
+                  WRITELN;
+                  WRITE(space:k,or_op)
+                END;
+              flag1 := FALSE;
+              WRITE(common2_name,1:0)
+            END
+        ELSE
+          IF common2[j]<>common2[PRED(j)] THEN
+            BEGIN
+              IF NOT flag1 THEN
+                BEGIN
+                  WRITELN;
+                  WRITE(space:k,or_op)
+                END;
+              flag1 := FALSE;
+              WRITE(common2_name,common2[j]:0)
+            END
+      UNTIL (j=prime) OR NOT flag2;
+      IF flag1 THEN
+        WRITE(zero);
+      WRITELN
+    END;
   WRITELN
-  END;
-WRITELN
 END;
 
 PROCEDURE statistics;
 
-VAR
-  primetotal:PACKED ARRAY[0..variable_max] OF 0..cube_max;
+VAR 
+  primetotal: PACKED ARRAY[0..variable_max] OF 0..cube_max;
 
-FUNCTION output_order:LONGINT;
+FUNCTION output_order: LONGINT;
 
-VAR
-  order,z:LONGINT;
+VAR 
+  order,z: LONGINT;
 
 BEGIN
-order:=0;
-FOR z:=1 TO multiple DO
-IF outcode[l,z] THEN
-  order:=SUCC(order);
-output_order:=order
+  order := 0;
+  FOR z:=1 TO multiple DO
+    IF outcode[l,z] THEN
+      order := SUCC(order);
+  output_order := order
 END;
 
-FUNCTION prime_order:LONGINT;
+FUNCTION prime_order: LONGINT;
 
-VAR
-  order,z:LONGINT;
-
-BEGIN
-order:=variable;
-FOR z:=1 TO variable DO
-IF primeimp[l,z]=sX THEN
-  order:=PRED(order);
-prime_order:=order
-END;
+VAR 
+  order,z: LONGINT;
 
 BEGIN
-termtotal[0]:=0;
-FOR i:=1 TO multiple DO
-  termtotal[0]:=termtotal[0]+termtotal[i];
-WRITELN('##### Statistics');
-FOR i:=0 TO multiple DO
-  BEGIN
-  WRITELN;
-  IF i=0 THEN
-    WRITELN('Overall')
-  ELSE
-    BEGIN
-    WRITE('Function ');
-    WITH outsignal[i] DO
-      BEGIN
-      IF NOT state THEN
-        WRITE(invert_op);
-      WRITE(name)
-      END;
-    WRITELN
-    END;
-  WRITELN;
-  FOR j:=0 TO variable DO
-    primetotal[j]:=0;
-  j:=0;
-  k:=0;
-  IF i=0 THEN
-  FOR l:=1 TO prime DO
-    BEGIN
-    j:=SUCC(j);
-    m:=prime_order;
-    IF m>1 THEN
-      k:=k+PRED(m);
-    primetotal[m]:=primetotal[m]+output_order
-    END
-  ELSE
-  FOR l:=1 TO prime DO
-  IF outcode[l,i] THEN
-    BEGIN
-    j:=SUCC(j);
-    m:=prime_order;
-    IF m>1 THEN
-      k:=k+PRED(m);
-    primetotal[m]:=SUCC(primetotal[m])
-    END;
-  j:=max(0,PRED(j));
-  WRITELN('Total of Boolean Operators');
-  WRITELN('  - OR  operators: ',j:0);
-  WRITELN('  - AND operators: ',k:0);
-  WRITELN;
-  WRITELN('Total of Prime Imps');
-  FOR j:=0 TO variable DO
-    BEGIN
-    WRITE('  - ',j:2,' order Prime Imps: ');
-    WRITELN(primetotal[j]:0)
-    END;
-  WRITELN;
-  j:=0;
-  k:=primetotal[0];
-  l:=0;
-  FOR m:=1 TO variable DO
-    BEGIN
-    j:=j+primetotal[m]*m;
-    k:=k+primetotal[m];
-    l:=l+SQR(primetotal[m]*m)
-    END;
-  m:=ROUND(10000.0-10000.0*j/variable/max(1,termtotal[i]));
-  WRITELN('Efficiency: ',m DIV 100:0,'.',m MOD 100:0,' %');
-  k:=max(1,k);
-  m:=ROUND(100.0*j/k);
-  WRITELN('Average   : ',m DIV 100:0,'.',m MOD 100:0);
-  m:=ROUND(100.0*SQRT(SQR(j)-l)/k);
-  WRITELN('Deviation : ',m DIV 100:0,'.',m MOD 100:0)
-  END;
-WRITELN
+  order := variable;
+  FOR z:=1 TO variable DO
+    IF primeimp[l,z]=sX THEN
+      order := PRED(order);
+  prime_order := order
 END;
 
 BEGIN
-WRITELN;
-IF table_flag THEN
-  truth_table;
-IF equat_flag>0 THEN
-  equations;
-IF stats_flag THEN
-  statistics
+  termtotal[0] := 0;
+  FOR i:=1 TO multiple DO
+    termtotal[0] := termtotal[0]+termtotal[i];
+  WRITELN('##### Statistics');
+  FOR i:=0 TO multiple DO
+    BEGIN
+      WRITELN;
+      IF i=0 THEN
+        WRITELN('Overall')
+      ELSE
+        BEGIN
+          WRITE('Function ');
+          WITH outsignal[i] DO
+            BEGIN
+              IF NOT state THEN
+                WRITE(invert_op);
+              WRITE(name)
+            END;
+          WRITELN
+        END;
+      WRITELN;
+      FOR j:=0 TO variable DO
+        primetotal[j] := 0;
+      j := 0;
+      k := 0;
+      IF i=0 THEN
+        FOR l:=1 TO prime DO
+          BEGIN
+            j := SUCC(j);
+            m := prime_order;
+            IF m>1 THEN
+              k := k+PRED(m);
+            primetotal[m] := primetotal[m]+output_order
+          END
+          ELSE
+            FOR l:=1 TO prime DO
+              IF outcode[l,i] THEN
+                BEGIN
+                  j := SUCC(j);
+                  m := prime_order;
+                  IF m>1 THEN
+                    k := k+PRED(m);
+                  primetotal[m] := SUCC(primetotal[m])
+                END;
+      j := max(0,PRED(j));
+      WRITELN('Total of Boolean Operators');
+      WRITELN('  - OR  operators: ',j:0);
+      WRITELN('  - AND operators: ',k:0);
+      WRITELN;
+      WRITELN('Total of Prime Imps');
+      FOR j:=0 TO variable DO
+        BEGIN
+          WRITE('  - ',j:2,' order Prime Imps: ');
+          WRITELN(primetotal[j]:0)
+        END;
+      WRITELN;
+      j := 0;
+      k := primetotal[0];
+      l := 0;
+      FOR m:=1 TO variable DO
+        BEGIN
+          j := j+primetotal[m]*m;
+          k := k+primetotal[m];
+          l := l+SQR(primetotal[m]*m)
+        END;
+      m := ROUND(10000.0-10000.0*j/variable/max(1,termtotal[i]));
+      WRITELN('Efficiency: ',m DIV 100:0,'.',m MOD 100:0,' %');
+      k := max(1,k);
+      m := ROUND(100.0*j/k);
+      WRITELN('Average   : ',m DIV 100:0,'.',m MOD 100:0);
+      m := ROUND(100.0*SQRT(SQR(j)-l)/k);
+      WRITELN('Deviation : ',m DIV 100:0,'.',m MOD 100:0)
+    END;
+  WRITELN
 END;
 
 BEGIN
-runtime_error_flag:=TRUE;
-ExitProc:=@exit_proc;
-
-IF SETJMP(env1)=0 THEN
-  BEGIN
-  input_data;
-  WRITELN('##### Boolean Functions');
   WRITELN;
-  WRITELN('Total Terms           : ',term:0);
-  IF term>0 THEN
+  IF table_flag THEN
+    truth_table;
+  IF equat_flag>0 THEN
+    equations;
+  IF stats_flag THEN
+    statistics
+END;
+
+BEGIN
+  runtime_error_flag := TRUE;
+  ExitProc := @exit_proc;
+
+  IF SETJMP(env1)=0 THEN
     BEGIN
-    generate_primes;
-    reduce_primes;
-    IF flag2 THEN
-      petrick_primes;
-    simplify_primes;
-    sort_primes;
-    output_data
-    END
-  ELSE
-    BEGIN
-    WRITELN;
-    WRITELN('***** INPUT ERROR: no truth table')
-    END
-  END;
-runtime_error_flag:=FALSE
+      input_data;
+      WRITELN('##### Boolean Functions');
+      WRITELN;
+      WRITELN('Total Terms           : ',term:0);
+      IF term>0 THEN
+        BEGIN
+          generate_primes;
+          reduce_primes;
+          IF flag2 THEN
+            petrick_primes;
+          simplify_primes;
+          sort_primes;
+          output_data
+        END
+      ELSE
+        BEGIN
+          WRITELN;
+          WRITELN('***** INPUT ERROR: no truth table')
+        END
+    END;
+  runtime_error_flag := FALSE
 END.
-
